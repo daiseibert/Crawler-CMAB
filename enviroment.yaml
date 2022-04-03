@@ -1,0 +1,13 @@
+name: cmab
+channels:
+  - defaults
+dependencies:
+  - numpy=1.21
+  - pip=21.2
+  - python=3.7
+  - pip:
+    - black==22.1
+    - beautifulsoup4
+    - requests
+    - wikipedia2vec
+    - pandas
