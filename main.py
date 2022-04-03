@@ -1,50 +1,37 @@
-from dis import dis
-from operator import index
-import sre_parse
-from turtle import clear
+from distutils.log import debug
 import bs4 as bs
 import requests
 import re
-import numpy as np
 from wikipedia2vec import Wikipedia2Vec
 from numpy import dot
 from numpy.linalg import norm
-import pandas as pd
 
 
 initial_term = "car"
-url_size = {}
-budget = 12000
-page_sizes = 0
+pages_and_sizes = {}
+budget = 20000
+total_size = 0
 pages_visited = []
-pages_visited.append(initial_term)
 links_list = []
-links_list.append(initial_term)
+# links_list.append(initial_term)
 wiki2vec = Wikipedia2Vec.load("enwiki_20180420_win10_500d.pkl")
 term_vector = wiki2vec.get_word_vector(initial_term)
-# term = "car"
-# 
-# def scrap_cos(term,n_terms):
+distances = []
+debug = False
 
 
-def donwload_page(term):
-    requested = requests.get('https://en.wikipedia.org/wiki/'+term)
-    page = bs.BeautifulSoup(requested.text,'html.parser')
-    # pg_size = res.headers.get('Content-Length')
-    #size_kb = float(pg_size)/1024
-    return term,requested,page
+def download_page(term):
+    requested = requests.get("https://en.wikipedia.org/wiki/" + term)
+    page = bs.BeautifulSoup(requested.text, "html.parser")
+    return requested, page
 
 
-def page_size(term, requested):
-    global url_size
-    # for term in 
-    pg_size = (len(requested.text))/1000
-    url_size[term] = pg_size
-    return url_size
+def get_page_size(requested):
+    return (len(requested.text)) / 1000
 
-    
+
 def get_links(page):
-    links = page.findAll("a", attrs={'href': re.compile("^/wiki/")})
+    links = page.findAll("a", attrs={"href": re.compile("^/wiki/")})
     global links_list
     link_list_local = []
     for link in links:
@@ -55,100 +42,75 @@ def get_links(page):
 
 
 def get_terms_vect(link_list_local):
-    link_vector = []
+    link_vector = {}
     for link in link_list_local:
         try:
             # print(link)
-            x = wiki2vec.get_word_vector(link)
-            link_vector.append((link, x))
-        except:
-            pass
-        try:
-            x = wiki2vec.get_entity_vector(link)
-            link_vector.append((link, x))
-        except:
-            continue
+            vector = wiki2vec.get_word_vector(link)
+            link_vector[link] = vector
+        except KeyError:
+            log_debug(f"word {link} not found")
+            link_title = link.title()
+            try:
+                vector = wiki2vec.get_entity_vector(link_title)
+                link_vector[link] = vector
+            except:
+                log_debug(f"entity {link} not found")
+                link_vector[link] = None
     return link_vector
 
 
-def get_distance(link_vector, n_terms):
-    cos_dist = []
-    for ln, vector in link_vector:
-        dis = dot(term_vector, vector)/(norm(term_vector)*norm(vector))
-        cos_dist.append((dis,ln))
-    data = sorted(set(cos_dist))
-    big_cos = data[-n_terms:] 
-    
-    # for x, y in big_cos:
-    #     url_size[y] = x 
-    return big_cos
+def clean_vectors(link_vector):
+    cleaned_link_vector = {}
+    for key, value in link_vector.items():
+        if value is not None:
+            cleaned_link_vector[key] = value
+    return cleaned_link_vector
 
-def loop(term):
-    global page_sizes
-    term, requested, page = donwload_page(term)
+
+def get_distance(link_vector):
+    global distances
+    for ln, vector in link_vector.items():
+        distances_keys = [i for _, i in distances]
+        if ln not in pages_visited and ln not in distances_keys:
+            dis = dot(term_vector, vector) / (norm(term_vector) * norm(vector))
+            distances.append((dis, ln))
+    distances = sorted((distances), reverse=1)
+    return distances
+
+
+def get_next_link():
+    for distance, link in distances:
+        if link not in pages_visited:
+            return distance, link
+
+
+def log_debug(message):
+    if debug:
+        print(message)
+
+
+def process_link(term):
+    global total_size, pages_visited
+    requested, page = download_page(term)
     # print(term)
-    dic = page_size(term, requested)
-    for item, value in dic.items():
-        # if page_sizes + value >= 2000:
-        #     break
+    page_size = get_page_size(requested)
+    total_size += page_size
+    pages_visited.append(term)
+    pages_and_sizes[term] = page_size
+    next_links = get_links(page)
+    link_vec = get_terms_vect(next_links)
+    link_vec = clean_vectors(link_vec)
+    get_distance(link_vec)
+    return get_next_link()
 
-        page_sizes += value
-        pages_visited.append(item)
-    link_local = get_links(page)
-    link_vec = get_terms_vect(link_local)
-    # dist = get_distance(link_vec[1], link_vec[0], 3)
-    dis = get_distance(link_vec, 3)
-    dis1 = sorted(dis, reverse=1)
-    print(dis1)
-    for x, y in dis1:
-        if y not in links_list:
-            links_list.append(y)
-    # return links_list
-    # print(dis)
-    # print(url_size)
 
-# while page_sizes < budget:
-#     print(page_sizes)
+def loop(initial_term):
+    distance = 1
+    next_link = initial_term
+    while True:
+        print(next_link, distance)
+        distance, next_link = process_link(next_link)
+
+
 loop(initial_term)
-for link in links_list:
-    if link not in pages_visited and page_sizes < budget:
-        print(page_sizes)
-        loop(link)
-        print(link)
-        pages_visited.append(link)
-    
-
-
-print(url_size)
-
-
-# term_blue = scrap_cos("blue", 3)
-# # print(term_blue)
-
-# terms = {}
-# terms["blue"] = term_blue
-# # print(terms["blue"])
-
-# first_level_list = []
-# second_level_list = []
-# for term in terms["blue"]:
-#     print(term)
-#     # second_level_list = []
-#     try:
-#         first_level_tree = scrap_cos((term[1].lower()), 3)
-#         first_level_list.append(first_level_tree)
-#     except KeyError as e:
-#         print(e)
-#     # terms["blue"] = ["term"][1] : [first_level_tree]
-#     for term2 in first_level_tree:
-#         try:
-#             second_level_tree = scrap_cos((term2[1].lower()), 3)
-#             second_level_list.append(second_level_tree)
-#         # terms["blue"]["each"]["first_level_tree"] = [second_level_tree]
-#         except KeyError as e:
-#             print(e)
-# print(terms)
-# print(first_level_list)
-# print(second_level_list)
-# print(url_size)
-
