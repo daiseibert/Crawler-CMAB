@@ -7,7 +7,7 @@ from numpy import dot
 from numpy.linalg import norm
 
 
-initial_term = "car"
+initial_term = "chair"
 pages_and_sizes = {}
 budget = 8000
 total_size = 0
@@ -94,25 +94,27 @@ def log_debug(message):
     if debug:
         print(message)
 
+
 def get_total_loss(total_sum, len_links_page):
     global total_loss
-    moment_loss = total_sum/len_links_page
+    moment_loss = total_sum / len_links_page
     total_loss += moment_loss
     print(f"Total Loss = {total_loss}")
     return total_loss
+
 
 def get_action_loss(distance):
     global comulative_action_loss
     last_link = pages_visited[-1]
     dist1 = 1
-    for (x,y) in distances:
+    for (x, y) in distances:
         if y == last_link:
             dist1 = x
     action_loss = 0
     action_loss += dist1 - distance
     comulative_action_loss += action_loss
-    print(f"Action Loss = {action_loss}") 
-    print(f"Comulative action Loss = {comulative_action_loss}") 
+    print(f"Action Loss = {action_loss}")
+    print(f"Comulative Action Loss = {comulative_action_loss}")
     return action_loss, comulative_action_loss
 
 
@@ -129,7 +131,7 @@ def process_link(term):
     link_vec = clean_vectors(link_vec)
     distances, total_sum = get_distance(link_vec)
     get_total_loss(total_sum, len(link_vec.keys()))
-    
+
     distance, link = get_next_link()
     get_action_loss(distance)
     return distance, link
@@ -139,11 +141,9 @@ def loop(initial_term):
     distance = 1
     next_link = initial_term
     while True and total_size < budget:
-        print(f"Total size = {total_size}")
+        print(f"Total size = {total_size} \n")
         print(next_link, distance)
         distance, next_link = process_link(next_link)
-
-
 
 
 loop(initial_term)
