@@ -9,7 +9,7 @@ from numpy.linalg import norm
 
 initial_term = "car"
 pages_and_sizes = {}
-budget = 20000
+budget = 8000
 total_size = 0
 pages_visited = []
 links_list = []
@@ -17,6 +17,7 @@ links_list = []
 wiki2vec = Wikipedia2Vec.load("enwiki_20180420_win10_500d.pkl")
 term_vector = wiki2vec.get_word_vector(initial_term)
 distances = []
+total_loss = 0
 debug = False
 
 
@@ -70,13 +71,16 @@ def clean_vectors(link_vector):
 
 def get_distance(link_vector):
     global distances
+    total_sum = 0
     for ln, vector in link_vector.items():
         distances_keys = [i for _, i in distances]
         if ln not in pages_visited and ln not in distances_keys:
             dis = dot(term_vector, vector) / (norm(term_vector) * norm(vector))
             distances.append((dis, ln))
+            total_sum += dis
     distances = sorted((distances), reverse=1)
-    return distances
+    # dist1, dist2 = distances[0], distances[1]
+    return distances, total_sum
 
 
 def get_next_link():
@@ -88,6 +92,24 @@ def get_next_link():
 def log_debug(message):
     if debug:
         print(message)
+
+def get_total_loss(total_sum, len_links_page):
+    global total_loss
+    moment_loss = total_sum/len_links_page
+    total_loss += moment_loss
+    print(f"Total Loss = {total_loss}")
+    return total_loss
+
+def get_action_loss(distance):
+    last_link = pages_visited[-1]
+    dist1 = 1
+    for (x,y) in distances:
+        if y == last_link:
+            dist1 = x
+    action_loss = 0
+    action_loss += dist1 - distance
+    print(f"Action Loss = {action_loss}") 
+    return action_loss
 
 
 def process_link(term):
@@ -101,16 +123,23 @@ def process_link(term):
     next_links = get_links(page)
     link_vec = get_terms_vect(next_links)
     link_vec = clean_vectors(link_vec)
-    get_distance(link_vec)
-    return get_next_link()
+    distances, total_sum = get_distance(link_vec)
+    get_total_loss(total_sum, len(link_vec.keys()))
+    
+    distance, link = get_next_link()
+    get_action_loss(distance)
+    return distance, link
 
 
 def loop(initial_term):
     distance = 1
     next_link = initial_term
-    while True:
+    while True and total_size < budget:
+        print(f"Total size = {total_size}")
         print(next_link, distance)
         distance, next_link = process_link(next_link)
+
+
 
 
 loop(initial_term)
