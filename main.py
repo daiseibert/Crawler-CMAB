@@ -18,6 +18,7 @@ wiki2vec = Wikipedia2Vec.load("enwiki_20180420_win10_500d.pkl")
 term_vector = wiki2vec.get_word_vector(initial_term)
 distances = []
 total_loss = 0
+comulative_action_loss = 0
 debug = False
 
 
@@ -101,6 +102,7 @@ def get_total_loss(total_sum, len_links_page):
     return total_loss
 
 def get_action_loss(distance):
+    global comulative_action_loss
     last_link = pages_visited[-1]
     dist1 = 1
     for (x,y) in distances:
@@ -108,8 +110,10 @@ def get_action_loss(distance):
             dist1 = x
     action_loss = 0
     action_loss += dist1 - distance
+    comulative_action_loss += action_loss
     print(f"Action Loss = {action_loss}") 
-    return action_loss
+    print(f"Comulative action Loss = {comulative_action_loss}") 
+    return action_loss, comulative_action_loss
 
 
 def process_link(term):
