@@ -60,3 +60,4 @@ Obs:
 - I spent about 3 days working on it. 
 - I did not manage to test others CMAB's. 
 - The GitHub informed in the challenge was really usefull to get the CMAB working, I used some snippets from there. 
+- The pretrained embedding that I use "enwiki_20180420_win10_500d.pkl", can be found here: https://wikipedia2vec.github.io/wikipedia2vec/pretrained/
