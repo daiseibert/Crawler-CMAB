@@ -7,7 +7,7 @@ from numpy import dot
 from numpy.linalg import norm
 
 
-initial_term = "chair"
+initial_term = "car"
 pages_and_sizes = {}
 budget = 8000
 total_size = 0
@@ -92,7 +92,7 @@ def get_next_link():
 
 def log_debug(message):
     if debug:
-        print(message)
+        return message
 
 
 def get_total_loss(total_sum, len_links_page):

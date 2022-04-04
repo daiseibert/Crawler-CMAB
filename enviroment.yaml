@@ -11,3 +11,4 @@ dependencies:
     - requests
     - wikipedia2vec
     - pandas
+    - matplotlib
