@@ -35,7 +35,7 @@ The greedy context guided crawler is divided in these sub-parts:
 The cmab.py file, there is the CMAB implementation in the crawler. In the challenge file is written that "a CMAB with two actions (or, arms) that chooses to either download a page or not based on the present context". However, I could not understand how to perform the CMAB in this situation.
 I create a CMAB, using the idea of the crawler, in the following way:
 - All the scraped links from the wiki page are retained in a list of tuples and sorted by the cosine similarity, from the smallest number to the highest, the distance is always calculated based on the initial given term.
-- Using this list, we define bins where each arm will work. How I define it? Dividing the list by the quantity of arms.
+- Using this list, I define bins where each arm will work. How I define it? Dividing the list by the quantity of arms.
 - The reward is defined as: If distance is bigger than threshold (e.g. 0.3), get the reward!
 - The regret is the difference of the distances, distance of the chosen link and the best option at that moment.
 - Now we can deduce that the CMAB is \epsilon - greedy and should converge to the last bin.
